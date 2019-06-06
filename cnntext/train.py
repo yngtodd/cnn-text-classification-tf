@@ -5,8 +5,8 @@ import numpy as np
 import os
 import time
 import datetime
-import data_helpers
-from text_cnn import TextCNN
+from cnntext import data_helpers
+from cnntext.text_cnn import TextCNN
 from tensorflow.contrib import learn
 
 from hammer.meters import OptimizationHistory
@@ -77,7 +77,7 @@ def preprocess():
 def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     # Training
     # ==================================================
-
+    
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
           allow_soft_placement=FLAGS.allow_soft_placement,
@@ -177,7 +177,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 time_str = datetime.datetime.now().isoformat()
 
                 # Record validation metrics for Hammer.
-                history.minibatch_loss_meter.add_valid_loss(loss.item())
+                history.minibatch_loss_meter.add_valid_loss(loss)
                 history.top1_valid.update(accuracy, FLAGS.batch_size)
 
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
@@ -206,22 +206,24 @@ def main(argv=None):
         'shuffle': True,
         'num_workers': 1
     }
+    
+    num_ranks = 30
+    for i in range(num_ranks):
+        history = OptimizationHistory(
+            savepath='/Users/yngtodd/src/ornl/cnn-text-classification-tf/experiments',
+            experiment_name='yoonkim_moviereviews',
+            device='cpu',
+            dataloader_info=dataloader_info,
+            rank=0
+        )
 
-    history = OptimizationHistory(
-        savepath='/Users/yngtodd/src/ornl/cnn-text-classification-tf/experiments',
-        experiment_name='yoonkim_moviereviews',
-        device='cpu',
-        dataloader_info=dataloader_info,
-        rank=0
-    )
+        x_train, y_train, vocab_processor, x_dev, y_dev = preprocess()
+        train(x_train, y_train, vocab_processor, x_dev, y_dev, history)
 
-    x_train, y_train, vocab_processor, x_dev, y_dev = preprocess()
-    train(x_train, y_train, vocab_processor, x_dev, y_dev, history)
-
-    history.time_meter.stop_timer()
-    history.record_history()
-    history.reset_meters()
-    history.save()
+        history.time_meter.stop_timer()
+        history.record_history()
+        history.reset_meters()
+        history.save()
 
 if __name__ == '__main__':
     tf.app.run()
