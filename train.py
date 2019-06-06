@@ -9,6 +9,8 @@ import data_helpers
 from text_cnn import TextCNN
 from tensorflow.contrib import learn
 
+from hammer.meters import OptimizationHistory
+
 # Parameters
 # ==================================================
 
@@ -26,7 +28,7 @@ tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularization lambda (default: 
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("num_epochs", 1, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
 tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
@@ -72,7 +74,7 @@ def preprocess():
     print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
     return x_train, y_train, vocab_processor, x_dev, y_dev
 
-def train(x_train, y_train, vocab_processor, x_dev, y_dev):
+def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     # Training
     # ==================================================
 
@@ -139,7 +141,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
             # Initialize all variables
             sess.run(tf.global_variables_initializer())
 
-            def train_step(x_batch, y_batch):
+            def train_step(x_batch, y_batch, history):
                 """
                 A single training step
                 """
@@ -152,10 +154,15 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
+
+                # Record history for Hammer
+                history.minibatch_loss_meter.add_train_loss(loss)
+                history.top1_train.update(accuracy, FLAGS.batch_size)
+
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(x_batch, y_batch, writer=None):
+            def dev_step(x_batch, y_batch, history, writer=None):
                 """
                 Evaluates model on a dev set
                 """
@@ -168,6 +175,11 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
+
+                # Record validation metrics for Hammer.
+                history.minibatch_loss_meter.add_valid_loss(loss.item())
+                history.top1_valid.update(accuracy, FLAGS.batch_size)
+
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
                 if writer:
                     writer.add_summary(summaries, step)
@@ -178,19 +190,38 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
             # Training loop. For each batch...
             for batch in batches:
                 x_batch, y_batch = zip(*batch)
-                train_step(x_batch, y_batch)
+                train_step(x_batch, y_batch, history)
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
                     print("\nEvaluation:")
-                    dev_step(x_dev, y_dev, writer=dev_summary_writer)
+                    dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
                     print("")
                 if current_step % FLAGS.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print("Saved model checkpoint to {}\n".format(path))
 
 def main(argv=None):
+
+    dataloader_info = {
+        'shuffle': True,
+        'num_workers': 1 
+    }    
+
+    history = OptimizationHistory(
+        savepath='/Users/yngtodd/src/ornl/cnn-text-classification-tf/experiments',
+        experiment_name='yoonkim_moviereviews',
+        device='cpu',
+        dataloader_info=dataloader_info,
+        rank=0
+    )
+
     x_train, y_train, vocab_processor, x_dev, y_dev = preprocess()
-    train(x_train, y_train, vocab_processor, x_dev, y_dev)
+    train(x_train, y_train, vocab_processor, x_dev, y_dev, history)
+
+    history.time_meter.stop_timer()
+    history.record_history()
+    history.reset_meters()
+    history.save()
 
 if __name__ == '__main__':
     tf.app.run()

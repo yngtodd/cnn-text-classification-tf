@@ -1,0 +1,12 @@
+Title = "yoonkim_moviereviews"
+Date = "2019-06-06"
+Device = "cpu"
+NumEpochs = [ 0,]
+StopEpoch = [ 0,]
+Runtime = [ 36.65664267539978,]
+"Acc@1TrainAvg" = 0.52
+"Acc@1ValidAvg" = 0.5337710976600647
+
+[Dataloaders]
+shuffle = true
+num_workers = 1
