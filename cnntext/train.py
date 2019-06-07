@@ -212,6 +212,10 @@ def main(argv=None):
         'shuffle': True,
         'num_workers': 1
     }
+
+    notes = {
+        'sample_size': 'Training set reduced by 20%'
+    }
     
     num_ranks = 30
     for i in range(num_ranks):
@@ -220,6 +224,7 @@ def main(argv=None):
             experiment_name='yoonkim_moviereviews',
             device='cpu',
             dataloader_info=dataloader_info,
+            notes=notes,
             rank=0
         )
 
