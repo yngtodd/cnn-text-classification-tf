@@ -220,7 +220,7 @@ def main(argv=None):
     num_ranks = 30
     for i in range(num_ranks):
         history = OptimizationHistory(
-            savepath='/home/ygx/src/cnn-text-classification-tf/experiments',
+            savepath='/home/ygx/src/cnn-text-classification-tf/experiments/downsample20',
             experiment_name='yoonkim_moviereviews',
             device='gpu',
             dataloader_info=dataloader_info,
