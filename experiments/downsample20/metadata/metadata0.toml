@@ -1,0 +1,15 @@
+Title = "yoonkim_moviereviews"
+Date = "2019-06-07"
+Device = "gpu"
+NumEpochs = [ 0,]
+StopEpoch = [ 0,]
+Runtime = [ 308.814982175827,]
+"Acc@1TrainAvg" = 0.9075928819510671
+"Acc@1ValidAvg" = 0.69368876516819
+
+[Dataloaders]
+shuffle = true
+num_workers = 1
+
+[Notes]
+sample_size = "Training set reduced by 20%"
