@@ -3,9 +3,9 @@ Date = "2019-06-06"
 Device = "gpu"
 NumEpochs = [ 0,]
 StopEpoch = [ 0,]
-Runtime = [ 386.8016223907471,]
-"Acc@1TrainAvg" = 0.9126400463117493
-"Acc@1ValidAvg" = 0.7124035914738973
+Runtime = [ 386.7706208229065,]
+"Acc@1TrainAvg" = 0.9116351852019627
+"Acc@1ValidAvg" = 0.703752342859904
 
 [Dataloaders]
 shuffle = true
