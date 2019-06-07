@@ -5,7 +5,7 @@ import numpy as np
 import os
 import time
 import datetime
-from cnntext import data_helpers
+from cnntext.data.movie_reviews import data_helpers
 from cnntext.text_cnn import TextCNN
 from tensorflow.contrib import learn
 
