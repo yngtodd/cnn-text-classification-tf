@@ -10,6 +10,7 @@ from cnntext.text_cnn import TextCNN
 from tensorflow.contrib import learn
 
 from hammer.meters import OptimizationHistory
+from sklearn.model_selection import train_test_split
 
 # Parameters
 # ==================================================
@@ -69,6 +70,11 @@ def preprocess():
     y_train, y_dev = y_shuffled[:dev_sample_index], y_shuffled[dev_sample_index:]
 
     del x, y, x_shuffled, y_shuffled
+
+    # Cut down the training set size to check sample size effect
+    x_train, _, y_train, _ = train_test_split(
+        x_train, y_train, test_size=0.20, random_state=42
+    )
 
     print("Vocabulary Size: {:d}".format(len(vocab_processor.vocabulary_)))
     print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
