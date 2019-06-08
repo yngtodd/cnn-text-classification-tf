@@ -85,6 +85,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
 
         # Try to squeeze eval in memory
         session_conf.gpu_options.per_process_gpu_memory_fraction = 0.8
+        session_conf.gpu_options.allow_growth=True
 
         sess = tf.Session(config=session_conf)
         with sess.as_default():
