@@ -193,7 +193,11 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
 
             # Generate batches
             batches = batch_iter(
-                list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
+                list(zip(x_train, y_train)),
+                FLAGS.batch_size, 
+                FLAGS.num_epochs
+            )
+
             # Training loop. For each batch...
             for batch in batches:
                 x_batch, y_batch = zip(*batch)
