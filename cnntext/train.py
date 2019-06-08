@@ -5,9 +5,11 @@ import numpy as np
 import os
 import time
 import datetime
-from cnntext.data.movie_reviews import data_helpers
-from cnntext.text_cnn import TextCNN
 from tensorflow.contrib import learn
+
+from cnntext.text_cnn import TextCNN
+from cnntext.data.dataloader import batch_iter
+from cnntext.data.movie_reviews import data_helpers
 
 from hammer.meters import OptimizationHistory
 from sklearn.model_selection import train_test_split
@@ -191,7 +193,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                     writer.add_summary(summaries, step)
 
             # Generate batches
-            batches = data_helpers.batch_iter(
+            batches = batch_iter(
                 list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
             # Training loop. For each batch...
             for batch in batches:
