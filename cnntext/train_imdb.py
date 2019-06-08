@@ -177,7 +177,9 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 }
                 step, summaries, loss, accuracy = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
-                    feed_dict)
+                    feed_dict
+                )
+
                 time_str = datetime.datetime.now().isoformat()
 
                 # Record validation metrics for Hammer.
