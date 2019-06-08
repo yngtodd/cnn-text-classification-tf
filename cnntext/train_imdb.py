@@ -202,6 +202,12 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 FLAGS.num_epochs
             )
 
+            test_batches - batch_iter(
+                list(zip(x_dev, y_dev)),
+                FLAGS.batch_size,
+                1
+            )
+
             # Training loop. For each batch...
             for batch in batches:
                 x_batch, y_batch = zip(*batch)
@@ -210,9 +216,10 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
 
                 if current_step % FLAGS.evaluate_every == 0:
                     with tf.device('/cpu:0'):
-                        print("\nEvaluation:")
-                        dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
-                        print("")
+                        for test_batch in test_batches:
+                            print("\nEvaluation:")
+                            dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
+                            print("")
 
                 if current_step % FLAGS.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
