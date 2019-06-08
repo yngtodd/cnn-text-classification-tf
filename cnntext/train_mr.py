@@ -8,8 +8,7 @@ import datetime
 from tensorflow.contrib import learn
 
 from cnntext.text_cnn import TextCNN
-from cnntext.data.dataloader import batch_iter
-from cnntext.data.movie_reviews import data_helpers
+from cnntext.data.dataloader import batch_iter, load_data_and_labels
 
 from hammer.meters import OptimizationHistory
 from sklearn.model_selection import train_test_split
@@ -52,7 +51,7 @@ def preprocess():
 
     # Load data
     print("Loading data...")
-    x_text, y = data_helpers.load_data_and_labels(FLAGS.positive_data_file, FLAGS.negative_data_file)
+    x_text, y = load_data_and_labels(FLAGS.positive_data_file, FLAGS.negative_data_file)
 
     # Build vocabulary
     max_document_length = max([len(x.split(" ")) for x in x_text])
@@ -207,6 +206,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 if current_step % FLAGS.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print("Saved model checkpoint to {}\n".format(path))
+
 
 def main(argv=None):
 
