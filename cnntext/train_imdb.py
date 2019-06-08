@@ -146,6 +146,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
             # Initialize all variables
             sess.run(tf.global_variables_initializer())
 
+
             def train_step(x_batch, y_batch, history):
                 """
                 A single training step
@@ -167,6 +168,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
                 train_summary_writer.add_summary(summaries, step)
 
+
             def dev_step(x_batch, y_batch, history, writer=None):
                 """
                 Evaluates model on a dev set
@@ -176,6 +178,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                   cnn.input_y: y_batch,
                   cnn.dropout_keep_prob: 1.0
                 }
+
                 step, summaries, loss, accuracy = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
                     feed_dict
@@ -191,6 +194,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 if writer:
                     writer.add_summary(summaries, step)
 
+
             # Generate batches
             batches = batch_iter(
                 list(zip(x_train, y_train)),
@@ -203,11 +207,13 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 x_batch, y_batch = zip(*batch)
                 train_step(x_batch, y_batch, history)
                 current_step = tf.train.global_step(sess, global_step)
+
                 if current_step % FLAGS.evaluate_every == 0:
                     with tf.device('/cpu:0'):
                         print("\nEvaluation:")
                         dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
                         print("")
+
                 if current_step % FLAGS.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print("Saved model checkpoint to {}\n".format(path))
