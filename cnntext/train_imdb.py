@@ -202,7 +202,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 FLAGS.num_epochs
             )
 
-            test_batches - batch_iter(
+            test_batches = batch_iter(
                 list(zip(x_dev, y_dev)),
                 FLAGS.batch_size,
                 1
