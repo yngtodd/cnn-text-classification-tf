@@ -211,8 +211,8 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print("Saved model checkpoint to {}\n".format(path))
 
-def main(argv=None):
 
+def main(argv=None):
     dataloader_info = {
         'shuffle': True,
         'num_workers': 1
