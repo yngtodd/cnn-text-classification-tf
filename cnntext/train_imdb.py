@@ -207,14 +207,14 @@ def main(argv=None):
     }
 
     notes = {
-        'sample_size': 'Training set reduced by 20%'
+        'sample_size': 'Training on full dataset'
     }
     
     num_ranks = 30
     for i in range(num_ranks):
         history = OptimizationHistory(
-            savepath='/home/ygx/src/cnn-text-classification-tf/experiments/downsample20',
-            experiment_name='yoonkim_moviereviews',
+            savepath='/home/ygx/src/cnn-text-classification-tf/experiments/imdb',
+            experiment_name='yoonkim_tf_imdb',
             device='gpu',
             dataloader_info=dataloader_info,
             notes=notes,
