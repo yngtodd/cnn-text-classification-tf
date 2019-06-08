@@ -8,8 +8,7 @@ import datetime
 from tensorflow.contrib import learn
 
 from cnntext.text_cnn import TextCNN
-from cnntext.data.dataloader import batch_iter
-from cnntext.data.movie_reviews import data_helpers
+from cnntext.data.dataloader import batch_iter, load_data_and_labels
 
 from hammer.meters import OptimizationHistory
 from sklearn.model_selection import train_test_split
@@ -44,42 +43,35 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 FLAGS = tf.flags.FLAGS
 
 
-def preprocess():
+def preprocess(downsample=0.0):
     # Data Preparation
     # ==================================================
 
     # Load data
     print("Loading data...")
-    x_train, y_train = data_helpers.load_data_and_labels(FLAGS.train_positive_data_file, FLAGS.train_negative_data_file)
-    x_test, y_test = data_helpers.load_data_and_labels(FLAGS.test_positive_data_file, FLAGS.test_negative_data_file)
+    x_train, y_train = load_data_and_labels(FLAGS.train_positive_data_file, FLAGS.train_negative_data_file)
+    x_dev, y_dev = load_data_and_labels(FLAGS.test_positive_data_file, FLAGS.test_negative_data_file)
+
+    corpus = x_train + x_dev
 
     # Build vocabulary
-    max_document_length = max([len(x.split(" ")) for x in x_text])
+    max_document_length = max([len(x.split(" ")) for x in corpus])
     vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
-    x = np.array(list(vocab_processor.fit_transform(x_text)))
+    processed_vocab = vocab_processor.fit(corpus)
 
-    # Randomly shuffle data
-    np.random.seed(10)
-    shuffle_indices = np.random.permutation(np.arange(len(y)))
-    x_shuffled = x[shuffle_indices]
-    y_shuffled = y[shuffle_indices]
-
-    # Split train/test set
-    # TODO: This is very crude, should use cross-validation
-    dev_sample_index = -1 * int(FLAGS.dev_sample_percentage * float(len(y)))
-    x_train, x_dev = x_shuffled[:dev_sample_index], x_shuffled[dev_sample_index:]
-    y_train, y_dev = y_shuffled[:dev_sample_index], y_shuffled[dev_sample_index:]
-
-    del x, y, x_shuffled, y_shuffled
+    x_train = np.array(list(vocab_processor.transform(x_train)))
+    x_dev = np.array(list(vocab_processor.transform(x_dev)))
 
     # Cut down the training set size to check sample size effect
-    x_train, _, y_train, _ = train_test_split(
-        x_train, y_train, test_size=0.20, random_state=42
-    )
+    if downsample > 0.0:
+       x_train, _, y_train, _ = train_test_split(
+            x_train, y_train, test_size=downsample, random_state=42
+       )
 
     print("Vocabulary Size: {:d}".format(len(vocab_processor.vocabulary_)))
     print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
     return x_train, y_train, vocab_processor, x_dev, y_dev
+
 
 def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     # Training
