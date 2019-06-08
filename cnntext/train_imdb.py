@@ -80,7 +80,12 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
           allow_soft_placement=FLAGS.allow_soft_placement,
-          log_device_placement=FLAGS.log_device_placement)
+          log_device_placement=FLAGS.log_device_placement
+        )
+
+        # Try to squeeze eval in memory
+        session_conf.gpu_options.per_process_gpu_memory_fraction = 0.8
+
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             cnn = TextCNN(
