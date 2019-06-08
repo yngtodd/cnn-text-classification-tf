@@ -204,9 +204,10 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 train_step(x_batch, y_batch, history)
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
-                    print("\nEvaluation:")
-                    dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
-                    print("")
+                    with tf.device('/cpu:0'):
+                        print("\nEvaluation:")
+                        dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
+                        print("")
                 if current_step % FLAGS.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print("Saved model checkpoint to {}\n".format(path))
