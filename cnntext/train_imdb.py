@@ -168,6 +168,8 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
                 train_summary_writer.add_summary(summaries, step)
 
+                del x_batch, y_batch
+
 
             def dev_step(x_batch, y_batch, history, writer=None):
                 """
@@ -223,6 +225,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     #        if current_step % FLAGS.evaluate_every == 0:
             with tf.device('/cpu:0'):
                 for test_batch in test_batches:
+                    x_batch, y_batch = zip(*batch)
                     print("\nEvaluation:")
                     dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
                     print("")
