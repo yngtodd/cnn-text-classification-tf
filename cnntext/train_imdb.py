@@ -76,7 +76,7 @@ def preprocess(downsample=0.0):
 def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     # Training
     # ==================================================
-    
+
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
           allow_soft_placement=FLAGS.allow_soft_placement,
@@ -149,7 +149,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
             # Generate batches
             batches = batch_iter(
                 list(zip(x_train, y_train)),
-                FLAGS.batch_size, 
+                FLAGS.batch_size,
                 FLAGS.num_epochs
             )
 
@@ -205,7 +205,7 @@ def train_step(x_batch, y_batch, history):
 
 
 def dev_step(x_batch, y_batch, history, writer=None):
-    """" 
+    """"
     Evaluates model on a dev set
     """
     feed_dict = {
@@ -226,8 +226,8 @@ def dev_step(x_batch, y_batch, history, writer=None):
     history.top1_valid.update(accuracy, FLAGS.batch_size)
 
     print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-        if writer:
-            writer.add_summary(summaries, step)
+    if writer:
+        writer.add_summary(summaries, step)
 
 
 def main(argv=None):
@@ -239,7 +239,7 @@ def main(argv=None):
     notes = {
         'sample_size': 'Training on full dataset'
     }
-    
+
     num_ranks = 30
     for i in range(num_ranks):
         history = OptimizationHistory(
