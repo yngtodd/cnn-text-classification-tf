@@ -84,7 +84,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
         )
 
         # Try to squeeze eval in memory
-        session_conf.gpu_options.per_process_gpu_memory_fraction = 0.8
+        session_conf.gpu_options.per_process_gpu_memory_fraction = 0.4
         session_conf.gpu_options.allow_growth=True
 
         sess = tf.Session(config=session_conf)
@@ -209,21 +209,23 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
             )
 
             # Training loop. For each batch...
-            for batch in batches:
-                x_batch, y_batch = zip(*batch)
-                train_step(x_batch, y_batch, history)
-                current_step = tf.train.global_step(sess, global_step)
+            for d in ['/device:GPU:2', '/device:GPU:3']:
+                with tf.device(d):
+                    for batch in batches:
+                        x_batch, y_batch = zip(*batch)
+                        train_step(x_batch, y_batch, history)
+                        current_step = tf.train.global_step(sess, global_step)
 
-                if current_step % FLAGS.checkpoint_every == 0:
-                    path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                    print("Saved model checkpoint to {}\n".format(path))
+                        if current_step % FLAGS.checkpoint_every == 0:
+                            path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                            print("Saved model checkpoint to {}\n".format(path))
 
-            if current_step % FLAGS.evaluate_every == 0:
-                with tf.device('/cpu:0'):
-                    for test_batch in test_batches:
-                        print("\nEvaluation:")
-                        dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
-                        print(""
+    #        if current_step % FLAGS.evaluate_every == 0:
+            with tf.device('/cpu:0'):
+                for test_batch in test_batches:
+                    print("\nEvaluation:")
+                    dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
+                    print("")
 
 
 def main(argv=None):
