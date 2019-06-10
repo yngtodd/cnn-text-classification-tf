@@ -164,7 +164,17 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 with tf.device(d):
                     for batch in batches:
                         x_batch, y_batch = zip(*batch)
-                        train_step(cnn, sess, train_summary_op, train_op, global_step, x_batch, y_batch, history)
+                        train_step(
+                            cnn, 
+                            sess, 
+                            train_summary_op, 
+                            train_op, 
+                            global_step, 
+                            x_batch,
+                            y_batch,
+                            train_summary_writer,
+                            history
+                        )
                         current_step = tf.train.global_step(sess, global_step)
 
                         if current_step % FLAGS.checkpoint_every == 0:
@@ -176,11 +186,20 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                 for test_batch in test_batches:
                     x_batch, y_batch = zip(*batch)
                     print("\nEvaluation:")
-                    dev_step(cnn, sess, dev_summary_op, global_step, x_dev, y_dev, history, writer=dev_summary_writer)
+                    dev_step(
+                        cnn, 
+                        sess, 
+                        dev_summary_op, 
+                        global_step, 
+                        x_dev, 
+                        y_dev, 
+                        history, 
+                        writer=dev_summary_writer
+                    )
                     print("")
 
 
-def train_step(cnn, sess, train_summary_op, train_op, global_step, x_batch, y_batch, history):
+def train_step(cnn, sess, train_summary_op, train_op, global_step, x_batch, y_batch, train_summary_writer, history):
     """
     A single training step
     """
