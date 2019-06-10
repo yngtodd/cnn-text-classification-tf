@@ -160,32 +160,34 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
             )
 
             # Training loop. For each batch...
-            for d in ['/device:GPU:2', '/device:GPU:3']:
-                with tf.device(d):
-                    for batch in batches:
-                        x_batch, y_batch = zip(*batch)
-                        train_step(
-                            cnn, 
-                            sess, 
-                            train_summary_op, 
-                            train_op, 
-                            global_step, 
-                            x_batch,
-                            y_batch,
-                            train_summary_writer,
-                            history
-                        )
-                        current_step = tf.train.global_step(sess, global_step)
+            #for d in ['/device:GPU:2', '/device:GPU:3']:
+            with tf.device('/cpu:0'):
+                for batch in batches:
+                    x_batch, y_batch = zip(*batch)
 
-                        if current_step % FLAGS.checkpoint_every == 0:
-                            path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                            print("Saved model checkpoint to {}\n".format(path))
+                    train_step(
+                        cnn, 
+                        sess, 
+                        train_summary_op, 
+                        train_op, 
+                        global_step, 
+                        x_batch,
+                        y_batch,
+                        train_summary_writer,
+                        history
+                    )
 
-    #        if current_step % FLAGS.evaluate_every == 0:
+                    current_step = tf.train.global_step(sess, global_step)
+
+                    if current_step % FLAGS.checkpoint_every == 0:
+                        path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        print("Saved model checkpoint to {}\n".format(path))
+
             with tf.device('/cpu:0'):
                 for test_batch in test_batches:
                     x_batch, y_batch = zip(*batch)
                     print("\nEvaluation:")
+
                     dev_step(
                         cnn, 
                         sess, 
@@ -199,7 +201,8 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
                     print("")
 
 
-def train_step(cnn, sess, train_summary_op, train_op, global_step, x_batch, y_batch, train_summary_writer, history):
+def train_step(cnn, sess, train_summary_op, train_op, global_step, 
+               x_batch, y_batch, train_summary_writer, history):
     """
     A single training step
     """
@@ -210,7 +213,9 @@ def train_step(cnn, sess, train_summary_op, train_op, global_step, x_batch, y_ba
     }
     _, step, summaries, loss, accuracy = sess.run(
         [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
-        feed_dict)
+        feed_dict
+    )
+
     time_str = datetime.datetime.now().isoformat()
 
     # Record history for Hammer
@@ -223,7 +228,8 @@ def train_step(cnn, sess, train_summary_op, train_op, global_step, x_batch, y_ba
     del x_batch, y_batch
 
 
-def dev_step(cnn, sess, dev_summary_op, global_step, x_batch, y_batch, history, writer=None):
+def dev_step(cnn, sess, dev_summary_op, global_step, 
+             x_batch, y_batch, history, writer=None):
     """"
     Evaluates model on a dev set
     """
