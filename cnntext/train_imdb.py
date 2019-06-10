@@ -76,7 +76,7 @@ def preprocess(downsample=0.0):
 def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
     # Training
     # ==================================================
-    
+
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
           allow_soft_placement=FLAGS.allow_soft_placement,
@@ -146,61 +146,10 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
             # Initialize all variables
             sess.run(tf.global_variables_initializer())
 
-
-            def train_step(x_batch, y_batch, history):
-                """
-                A single training step
-                """
-                feed_dict = {
-                  cnn.input_x: x_batch,
-                  cnn.input_y: y_batch,
-                  cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                }
-                _, step, summaries, loss, accuracy = sess.run(
-                    [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
-                    feed_dict)
-                time_str = datetime.datetime.now().isoformat()
-
-                # Record history for Hammer
-                history.minibatch_loss_meter.add_train_loss(loss)
-                history.top1_train.update(accuracy, FLAGS.batch_size)
-
-                print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-                train_summary_writer.add_summary(summaries, step)
-
-                del x_batch, y_batch
-
-
-            def dev_step(x_batch, y_batch, history, writer=None):
-                """
-                Evaluates model on a dev set
-                """
-                feed_dict = {
-                  cnn.input_x: x_batch,
-                  cnn.input_y: y_batch,
-                  cnn.dropout_keep_prob: 1.0
-                }
-
-                step, summaries, loss, accuracy = sess.run(
-                    [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
-                    feed_dict
-                )
-
-                time_str = datetime.datetime.now().isoformat()
-
-                # Record validation metrics for Hammer.
-                history.minibatch_loss_meter.add_valid_loss(loss)
-                history.top1_valid.update(accuracy, FLAGS.batch_size)
-
-                print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-                if writer:
-                    writer.add_summary(summaries, step)
-
-
             # Generate batches
             batches = batch_iter(
                 list(zip(x_train, y_train)),
-                FLAGS.batch_size, 
+                FLAGS.batch_size,
                 FLAGS.num_epochs
             )
 
@@ -211,24 +160,99 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev, history):
             )
 
             # Training loop. For each batch...
-            for d in ['/device:GPU:2', '/device:GPU:3']:
-                with tf.device(d):
-                    for batch in batches:
-                        x_batch, y_batch = zip(*batch)
-                        train_step(x_batch, y_batch, history)
-                        current_step = tf.train.global_step(sess, global_step)
+            #for d in ['/device:GPU:2', '/device:GPU:3']:
+            with tf.device('/cpu:0'):
+                for batch in batches:
+                    x_batch, y_batch = zip(*batch)
 
-                        if current_step % FLAGS.checkpoint_every == 0:
-                            path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                            print("Saved model checkpoint to {}\n".format(path))
+                    train_step(
+                        cnn, 
+                        sess, 
+                        train_summary_op, 
+                        train_op, 
+                        global_step, 
+                        x_batch,
+                        y_batch,
+                        train_summary_writer,
+                        history
+                    )
 
-    #        if current_step % FLAGS.evaluate_every == 0:
+                    current_step = tf.train.global_step(sess, global_step)
+
+                    if current_step % FLAGS.checkpoint_every == 0:
+                        path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        print("Saved model checkpoint to {}\n".format(path))
+
             with tf.device('/cpu:0'):
                 for test_batch in test_batches:
                     x_batch, y_batch = zip(*batch)
                     print("\nEvaluation:")
-                    dev_step(x_dev, y_dev, history, writer=dev_summary_writer)
+
+                    dev_step(
+                        cnn, 
+                        sess, 
+                        dev_summary_op, 
+                        global_step, 
+                        x_dev, 
+                        y_dev, 
+                        history, 
+                        writer=dev_summary_writer
+                    )
                     print("")
+
+
+def train_step(cnn, sess, train_summary_op, train_op, global_step, 
+               x_batch, y_batch, train_summary_writer, history):
+    """
+    A single training step
+    """
+    feed_dict = {
+        cnn.input_x: x_batch,
+        cnn.input_y: y_batch,
+        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+    }
+    _, step, summaries, loss, accuracy = sess.run(
+        [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
+        feed_dict
+    )
+
+    time_str = datetime.datetime.now().isoformat()
+
+    # Record history for Hammer
+    history.minibatch_loss_meter.add_train_loss(loss)
+    history.top1_train.update(accuracy, FLAGS.batch_size)
+
+    print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+    train_summary_writer.add_summary(summaries, step)
+
+    del x_batch, y_batch
+
+
+def dev_step(cnn, sess, dev_summary_op, global_step, 
+             x_batch, y_batch, history, writer=None):
+    """"
+    Evaluates model on a dev set
+    """
+    feed_dict = {
+        cnn.input_x: x_batch,
+        cnn.input_y: y_batch,
+        cnn.dropout_keep_prob: 1.0
+    }
+
+    step, summaries, loss, accuracy = sess.run(
+        [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
+        feed_dict
+    )
+
+    time_str = datetime.datetime.now().isoformat()
+
+    # Record validation metrics for Hammer.
+    history.minibatch_loss_meter.add_valid_loss(loss)
+    history.top1_valid.update(accuracy, FLAGS.batch_size)
+
+    print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+    if writer:
+        writer.add_summary(summaries, step)
 
 
 def main(argv=None):
@@ -240,7 +264,7 @@ def main(argv=None):
     notes = {
         'sample_size': 'Training on full dataset'
     }
-    
+
     num_ranks = 30
     for i in range(num_ranks):
         history = OptimizationHistory(
